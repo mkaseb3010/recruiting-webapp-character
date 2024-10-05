@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './App.css';
-import { ATTRIBUTE_LIST, CLASS_LIST } from './consts.js';
+import { ATTRIBUTE_LIST, CLASS_LIST, SKILL_LIST } from './consts.js';
 
 function App() {
   // Initialize state for each attribute with a starting value of 10
@@ -17,6 +17,13 @@ function App() {
   const [attributes, setAttributes] = useState(initialAttributes);
   const [selectedClass, setSelectedClass] = useState(null);
 
+  // Initialize skill points
+  const initialSkillPoints = SKILL_LIST.reduce((acc, skill) => ({
+    ...acc,
+    [skill.name]: 0  // Start all skills with 0 points
+  }), {});
+  const [skillPoints, setSkillPoints] = useState(initialSkillPoints);
+
   // Function to modify an attribute, ensuring the total does not exceed 70 and no attribute goes below 0
   const modifyAttribute = (attr, delta) => {
     const totalAttributes = Object.values(attributes).reduce((acc, value) => acc + value, 0);
@@ -31,7 +38,15 @@ function App() {
 
   // Function to calculate the ability modifier for a given attribute
   const calculateModifier = (attributeValue) => {
-    return Math.floor((attributeValue - 10) / 2);
+    return Math.floor((attributeValue - 10) / 2); // Calculate ability modifier
+  };
+
+  const modifySkillPoints = (skill, delta) => {
+    // Ensure skill points do not go negative and respect the total available points
+    setSkillPoints(prevPoints => ({
+      ...prevPoints,
+      [skill]: Math.max(0, prevPoints[skill] + delta)
+    }));
   };
 
   // Function to check if the current attributes meet the requirements for a given class
@@ -60,10 +75,22 @@ function App() {
           </div>
         ))}
       </section>
+      <section className="Skills">
+        <h2>Skills</h2>
+        {SKILL_LIST.map(skill => (
+          <div key={skill.name} className="Skill">
+            {skill.name} - Points: {skillPoints[skill.name]} 
+            [<button onClick={() => modifySkillPoints(skill.name, 1)}>+</button>]
+            [<button onClick={() => modifySkillPoints(skill.name, -1)}>-</button>] 
+            Modifier ({skill.attributeModifier}): {calculateModifier(attributes[skill.attributeModifier])}
+            Total: {skillPoints[skill.name] + calculateModifier(attributes[skill.attributeModifier])}
+          </div>
+        ))}
+      </section>
       <section className="Classes">
         <h2>Classes</h2>
         {Object.keys(CLASS_LIST).map(className => (
-          <div key={className} 
+          <div key={className}
                onClick={() => handleClassClick(className)}
                className={`Class ${checkClassRequirements(className) ? "qualified" : "not-qualified"}`}>
             {className}

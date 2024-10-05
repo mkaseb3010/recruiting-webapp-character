@@ -29,6 +29,14 @@ function App() {
   };
 
   const [characters, setCharacters] = useState([initialCharacter]);
+  // Add party skill check
+  const [partySkillCheck, setPartySkillCheck] = useState({
+    selectedSkill: SKILL_LIST[0].name,
+    dc: 10,
+    rollResult: null,
+    success: null,
+    selectedCharacter: null
+  });
 
   // Modify attribute for a specific character with respect to their index
   const modifyAttribute = (charIndex, attr, delta) => {
@@ -91,11 +99,49 @@ function App() {
     setCharacters(newCharacters);
   };
 
+  // Handle skill check for a specific party
+  const handlePartySkillCheck = () => {
+    let highestTotal = -Infinity;
+    let selectedCharacterIndex = null;
+
+    characters.forEach((character, index) => {
+      const skill = partySkillCheck.selectedSkill;
+      const skillModifier = Math.floor((character.attributes[SKILL_LIST.find(s => s.name === skill).attributeModifier] - 10) / 2);
+      const skillTotal = character.skillPoints[skill] + skillModifier;
+
+      if (skillTotal > highestTotal) {
+        highestTotal = skillTotal;
+        selectedCharacterIndex = index;
+      }
+    });
+
+    if (selectedCharacterIndex !== null) {
+      const roll = Math.floor(Math.random() * 20) + 1;
+      const total = roll + highestTotal;
+      const success = total >= partySkillCheck.dc;
+
+      setPartySkillCheck({
+        ...partySkillCheck,
+        rollResult: roll,
+        success,
+        selectedCharacter: selectedCharacterIndex
+      });
+    }
+  };
+
   // Handle input changes for skill check 
   const updateSkillCheck = (charIndex, field, value) => {
     const newCharacters = [...characters];
     newCharacters[charIndex].skillCheck[field] = value;
     setCharacters(newCharacters);
+  };
+
+  // Handle inpur changes for party skill check
+  const updatePartySkillCheck = (field, value) => {
+    setPartySkillCheck({
+      ...partySkillCheck,
+      [field]: value
+    });
   };
 
 return (
@@ -181,6 +227,40 @@ return (
         </section>
       </div>
     ))}
+    <section className="PartySkillCheck">
+      <h2>Party Skill Check</h2>
+      <div>
+        <label>Skill: </label>
+        <select
+          value={partySkillCheck.selectedSkill}
+          onChange={(e) => updatePartySkillCheck('selectedSkill', e.target.value)}
+        >
+          {SKILL_LIST.map(skill => (
+            <option key={skill.name} value={skill.name}>
+              {skill.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label>DC: </label>
+        <input
+          type="number"
+          value={partySkillCheck.dc}
+          onChange={(e) => updatePartySkillCheck('dc', parseInt(e.target.value))}
+        />
+      </div>
+      <button onClick={handlePartySkillCheck}>Roll</button>
+      {partySkillCheck.rollResult !== null && (
+        <div>
+          <p>Roll: {partySkillCheck.rollResult}</p>
+          <p>{partySkillCheck.success ? "Success!" : "Failure"}</p>
+          {partySkillCheck.selectedCharacter !== null && (
+            <p>Selected Character: {partySkillCheck.selectedCharacter + 1}</p>
+          )}
+        </div>
+      )}
+    </section>
   </div>
 );
 }

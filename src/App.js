@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './App.css';
-import { ATTRIBUTE_LIST } from './consts.js';
+import { ATTRIBUTE_LIST, CLASS_LIST } from './consts.js';
 
 function App() {
   const initialAttributes = {
@@ -26,6 +26,12 @@ function App() {
     }));
   };
 
+  //Added a function to check class requirments
+  const checkClassRequirements = className => {
+    const requirements = CLASS_LIST[className];
+    return Object.entries(requirements).every(([key, value]) => attributes[key] >= value);
+  };
+
   return (
     <div className="App">
       <header className="App-header">
@@ -37,6 +43,14 @@ function App() {
             {attr}: {attributes[attr]}
             <button onClick={() => modifyAttribute(attr, 1)}>+</button>
             <button onClick={() => modifyAttribute(attr, -1)}>-</button>
+          </div>
+        ))}
+      </section>
+      <section className="Classes">
+        <h2>Classes</h2>
+        {Object.keys(CLASS_LIST).map(className => (
+          <div key={className} className={checkClassRequirements(className) ? "qualified" : "not-qualified"}>
+            {className} {checkClassRequirements(className) ? "(Qualified)" : "(Not Qualified)"}
           </div>
         ))}
       </section>

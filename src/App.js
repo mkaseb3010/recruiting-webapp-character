@@ -41,11 +41,17 @@ function App() {
     return Math.floor((attributeValue - 10) / 2); // Calculate ability modifier
   };
 
+  const totalSkillPoints = 10 + (4 * calculateModifier(attributes.Intelligence));
+
+  // Ensure skill points do not go negative and respect the total available points
   const modifySkillPoints = (skill, delta) => {
-    // Ensure skill points do not go negative and respect the total available points
+    const totalSpentPoints = Object.values(skillPoints).reduce((acc, value) => acc + value, 0);
+    if ((delta > 0 && totalSpentPoints >= totalSkillPoints) || (skillPoints[skill] + delta < 0)) {
+      return; 
+    }
     setSkillPoints(prevPoints => ({
       ...prevPoints,
-      [skill]: Math.max(0, prevPoints[skill] + delta)
+      [skill]: prevPoints[skill] + delta
     }));
   };
 
@@ -77,6 +83,7 @@ function App() {
       </section>
       <section className="Skills">
         <h2>Skills</h2>
+        <p>Total Skill Points Available: {totalSkillPoints}</p>
         {SKILL_LIST.map(skill => (
           <div key={skill.name} className="Skill">
             {skill.name} - Points: {skillPoints[skill.name]} 

@@ -29,6 +29,11 @@ function App() {
     }));
   };
 
+  // Function to calculate the ability modifier for a given attribute
+  const calculateModifier = (attributeValue) => {
+    return Math.floor((attributeValue - 10) / 2);
+  };
+
   // Function to check if the current attributes meet the requirements for a given class
   const checkClassRequirements = className => {
     const requirements = CLASS_LIST[className];
@@ -49,6 +54,7 @@ function App() {
         {ATTRIBUTE_LIST.map(attr => (
           <div key={attr} className="Attribute">
             {attr}: {attributes[attr]}
+            <span> (Modifier: {calculateModifier(attributes[attr])})</span>
             <button onClick={() => modifyAttribute(attr, 1)}>+</button>
             <button onClick={() => modifyAttribute(attr, -1)}>-</button>
           </div>

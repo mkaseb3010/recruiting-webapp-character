@@ -1,114 +1,119 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import './App.css';
 import { ATTRIBUTE_LIST, CLASS_LIST, SKILL_LIST } from './consts.js';
 
-const initialAttributes = {
+function App() {
+  // Initialize state for each attribute with a starting value of 10
+  const initialAttributes = {
     Strength: 10,
     Dexterity: 10,
     Constitution: 10,
     Intelligence: 10,
     Wisdom: 10,
     Charisma: 10
-};
+  };
 
-const initialSkillPoints = SKILL_LIST.reduce((acc, skill) => ({
+  // State to hold the current values of the attributes and track requirments that are displayed with respect to a clicked class
+  const [attributes, setAttributes] = useState(initialAttributes);
+  const [selectedClass, setSelectedClass] = useState(null);
+
+  // Initialize skill points
+  const initialSkillPoints = SKILL_LIST.reduce((acc, skill) => ({
     ...acc,
-    [skill.name]: 0
-}), {});
+    [skill.name]: 0  // Start all skills with 0 points
+  }), {});
+  const [skillPoints, setSkillPoints] = useState(initialSkillPoints);
 
-function App() {
-    const githubUsername = 'mkaseb1'; 
-    const apiUrl = `https://recruiting.verylongdomaintotestwith.ca/api/${githubUsername}}/character`;
+  // Function to modify an attribute, ensuring the total does not exceed 70 and no attribute goes below 0
+  const modifyAttribute = (attr, delta) => {
+    const totalAttributes = Object.values(attributes).reduce((acc, value) => acc + value, 0);
+    if ((delta > 0 && totalAttributes >= 70) || (attributes[attr] + delta < 0)) {
+      return; 
+    }
+    setAttributes(prevAttributes => ({
+      ...prevAttributes,
+      [attr]: prevAttributes[attr] + delta
+    }));
+  };
 
-    const [attributes, setAttributes] = useState(initialAttributes);
-    const [skillPoints, setSkillPoints] = useState(initialSkillPoints);
-    const [selectedClass, setSelectedClass] = useState(null);
+  // Function to calculate the ability modifier for a given attribute
+  const calculateModifier = (attributeValue) => {
+    return Math.floor((attributeValue - 10) / 2); // Calculate ability modifier
+  };
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await fetch(apiUrl);
-                const data = await response.json();
-                if (data) {
-                    setAttributes(data.attributes || initialAttributes);
-                    setSkillPoints(data.skillPoints || initialSkillPoints);
-                    setSelectedClass(data.selectedClass || null);
-                }
-            } catch (error) {
-                console.error('Failed to fetch data:', error);
-            }
-        };
-        fetchData();
-    }, [apiUrl]);
+  const totalSkillPoints = 10 + (4 * calculateModifier(attributes.Intelligence));
 
-    const saveCharacterData = async () => {
-        try {
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    attributes,
-                    skillPoints,
-                    selectedClass
-                })
-            });
-            const data = await response.json();
-            console.log('Data saved:', data);
-        } catch (error) {
-            console.error('Failed to save data:', error);
-        }
-    };
+  // Ensure skill points do not go negative and respect the total available points
+  const modifySkillPoints = (skill, delta) => {
+    const totalSpentPoints = Object.values(skillPoints).reduce((acc, value) => acc + value, 0);
+    if ((delta > 0 && totalSpentPoints >= totalSkillPoints) || (skillPoints[skill] + delta < 0)) {
+      return; 
+    }
+    setSkillPoints(prevPoints => ({
+      ...prevPoints,
+      [skill]: prevPoints[skill] + delta
+    }));
+  };
 
-    // This will cause an error as i have only added the implementation for requirments #6
-    return (
-        <div className="App">
-            <header className="App-header">
-                <h1>React Coding Exercise</h1>
-                <button onClick={saveCharacterData}>Save Character</button>
-            </header>
-            <section className="Attributes">
-                {ATTRIBUTE_LIST.map(attr => (
-                    <div key={attr} className="Attribute">
-                        {attr}: {attributes[attr]}
-                        <span> (Modifier: {calculateModifier(attributes[attr])})</span>
-                        <button onClick={() => modifyAttribute(attr, 1)}>+</button>
-                        <button onClick={() => modifyAttribute(attr, -1)}>-</button>
-                    </div>
-                ))}
-            </section>
-            <section className="Skills">
-                <h2>Skills</h2>
-                <p>Total Skill Points Available: {totalSkillPoints}</p>
-                {SKILL_LIST.map(skill => (
-                    <div key={skill.name} className="Skill">
-                        {skill.name} - Points: {skillPoints[skill.name]}
-                        [<button onClick={() => modifySkillPoints(skill.name, 1)}>+</button>]
-                        [<button onClick={() => modifySkillPoints(skill.name, -1)}>-</button>]
-                        Modifier ({skill.attributeModifier}): {calculateModifier(attributes[skill.attributeModifier])}
-                        Total: {skillPoints[skill.name] + calculateModifier(attributes[skill.attributeModifier])}
-                    </div>
-                ))}
-            </section>
-            <section className="Classes">
-                <h2>Classes</h2>
-                {CLASS_LIST.map(className => (
-                    <div key={className}
-                         onClick={() => handleClassClick(className)}
-                         className={`Class ${checkClassRequirements(className) ? "qualified" : "not-qualified"}`}>
-                        {className}
-                    </div>
-                ))}
-                {selectedClass && (
-                    <div>
-                        <h3>Requirements for {selectedClass}:</h3>
-                        {Object.entries(CLASS_LIST[selectedClass]).map(([attr, req]) => (
-                            <div key={attr}>{attr}: {req}</div>
-                        ))}
-                    </div>
-                )}
-            </section>
-        </div>
-    );
+  // Function to check if the current attributes meet the requirements for a given class
+  const checkClassRequirements = className => {
+    const requirements = CLASS_LIST[className];
+    return Object.entries(requirements).every(([key, value]) => attributes[key] >= value);
+  };
+
+  // Function to handle clicking on a class name, setting the selected class to display its requirements
+  const handleClassClick = className => {
+    setSelectedClass(className);
+  };
+
+  return (
+    <div className="App">
+      <header className="App-header">
+        <h1>React Coding Exercise</h1>
+      </header>
+      <section className="Attributes">
+        {ATTRIBUTE_LIST.map(attr => (
+          <div key={attr} className="Attribute">
+            {attr}: {attributes[attr]}
+            <span> (Modifier: {calculateModifier(attributes[attr])})</span>
+            <button onClick={() => modifyAttribute(attr, 1)}>+</button>
+            <button onClick={() => modifyAttribute(attr, -1)}>-</button>
+          </div>
+        ))}
+      </section>
+      <section className="Skills">
+        <h2>Skills</h2>
+        <p>Total Skill Points Available: {totalSkillPoints}</p>
+        {SKILL_LIST.map(skill => (
+          <div key={skill.name} className="Skill">
+            {skill.name} - Points: {skillPoints[skill.name]} 
+            [<button onClick={() => modifySkillPoints(skill.name, 1)}>+</button>]
+            [<button onClick={() => modifySkillPoints(skill.name, -1)}>-</button>] 
+            Modifier ({skill.attributeModifier}): {calculateModifier(attributes[skill.attributeModifier])}
+            Total: {skillPoints[skill.name] + calculateModifier(attributes[skill.attributeModifier])}
+          </div>
+        ))}
+      </section>
+      <section className="Classes">
+        <h2>Classes</h2>
+        {Object.keys(CLASS_LIST).map(className => (
+          <div key={className}
+               onClick={() => handleClassClick(className)}
+               className={`Class ${checkClassRequirements(className) ? "qualified" : "not-qualified"}`}>
+            {className}
+          </div>
+        ))}
+        {selectedClass && (
+          <div>
+            <h3>Requirements for {selectedClass}:</h3>
+            {Object.entries(CLASS_LIST[selectedClass]).map(([attr, req]) => (
+              <div key={attr}>{attr}: {req}</div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
 }
 
 export default App;
